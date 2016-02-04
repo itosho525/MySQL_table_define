@@ -5,8 +5,12 @@ IFS='
 
 HOST=${1}
 USER=${2}
-PASSWORD=${3}
-DB=${4}
+DB=${3}
+
+read -sp "Enter password: " pass
+tty -s && echo
+echo "Proccessing..."
+PASSWORD=$pass
 
 exec 1> >(cat > "./${DB}.md")
 
@@ -15,43 +19,21 @@ for table in `MYSQL_PWD=${PASSWORD} mysql -h${HOST} -u${USER} -e "show tables;" 
 do
   echo "## ${table}"
 
-  # テーブル定義の出力
-  echo '### Fields'
-  echo 'Field | Type | Collation | Null | Key | Default | Extra | Comment'
-  echo '--- | --- | --- | --- | --- | --- | --- | ---'
+  echo '### テーブル定義'
+  echo 'カラム名 | 型 | キー | デフォルト値 | NULL | 照合順序 | その他'
+  echo '--- | --- | --- | --- | --- | --- | ---'
 
   for line in `MYSQL_PWD=${PASSWORD} mysql -h${HOST} -u${USER} -e "show full fields from ${table}" -N ${DB}`
   do
     field=`echo ${line} | cut -f1`
     type=`echo ${line} | cut -f2`
-    collation=`echo ${line} | cut -f3`
-    null=`echo ${line} | cut -f4`
     key=`echo ${line} | cut -f5`
     default=`echo ${line} | cut -f6`
+    null=`echo ${line} | cut -f4`
+    collation=`echo ${line} | cut -f3`
     extra=`echo ${line} | cut -f7`
-    comment=`echo ${line} | cut -f9`
 
-    echo "${field} | ${type} | ${collation} | ${null} | ${key} | ${default} | ${extra} | ${comment}"
-  done
-
-  # インデックス情報の出力
-  echo '### Indexs'
-  echo 'Non_unique | Key_name | Seq_in_index | Column_name | Sub_part | Packed | Index_type | Comment | Index_comment'
-  echo '--- | --- | --- | --- | --- | --- | --- | --- | ---'
-
-  for line in `MYSQL_PWD=${PASSWORD} mysql -h${HOST} -u${USER} -e "show index from ${table}" -N ${DB}`
-  do
-    non_unique=`echo ${line} | cut -f2`
-    key_name=`echo ${line} | cut -f3`
-    seq_in_index=`echo ${line} | cut -f4`
-    column_name=`echo ${line} | cut -f5`
-    sub_part=`echo ${line} | cut -f8`
-    packed=`echo ${line} | cut -f9`
-    index_type=`echo ${line} | cut -f11`
-    comment=`echo ${line} | cut -f12`
-    index_comment=`echo ${line} | cut -f13`
-
-    echo "${non_unique} | ${key_name} | ${seq_in_index} | ${column_name} | ${sub_part} | ${packed} | ${index_type} | ${comment} | ${index_comment}"
+    echo "${field} | ${type} | ${key} | ${default} | ${null} | ${collation} | ${extra}"
   done
 
   echo
